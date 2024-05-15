@@ -8,6 +8,9 @@ run/
 *.lico.bak/
 jitter_results.csv
 
+# kernel tracing
+trace.dat
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
