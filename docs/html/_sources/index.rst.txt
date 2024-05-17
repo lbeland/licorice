@@ -19,4 +19,5 @@ library support of Python while enabling realtime timing guarantees.
    api/index.rst
    basic/index.rst
    advanced/index.rst
+   debugging/index.rst
    developers/index.rst

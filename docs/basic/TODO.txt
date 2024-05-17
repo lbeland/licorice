@@ -1,0 +1,6 @@
+Things to add to docs:
+ - check explanation of max_packets_per_tick
+ - define packet vs sample vs "tick data amount"
+ - talk about how parsers work in an async example
+
+ - discuss how to add dependencies

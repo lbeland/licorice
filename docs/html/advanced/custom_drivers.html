@@ -48,12 +48,14 @@
 <li class="toctree-l1"><a class="reference internal" href="../basic/index.html">Basic Usage</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">Advanced Usage</a><ul class="current">
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Custom Drivers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#specification">Specification</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#example">Example</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="debugging.html">Debugging Models</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../debugging/index.html">Debugging LiCoRICE</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../developers/index.html">Developer Guide</a></li>
 </ul>
 
@@ -84,33 +86,90 @@
              
   <section id="custom-drivers">
 <h1>Custom Drivers<a class="headerlink" href="#custom-drivers" title="Permalink to this heading"></a></h1>
-<p>Users may extend LiCoRICE by writing their own drivers to interface with peripherals. For now, sink drivers must be added to the <code class="docutils literal notranslate"><span class="pre">licorice/templates/sink_drivers/</span></code> folder and source to <code class="docutils literal notranslate"><span class="pre">licorice/templates/source</span> <span class="pre">_drivers/</span></code>. Eventually, users will be able to add their drivers to custom folders by setting an environment variable.</p>
+<p>Users may extend LiCoRICE by setting the <code class="docutils literal notranslate"><span class="pre">LICORICE_TEMPLATE_PATH</span></code> environment variable to add or overwrite template files, including drivers. In this way, users may write their own drivers to interface with peripherals. Drivers are represented as <a class="reference external" href="https://docs.cython.org/en/stable/src/userguide/extension_types.html">Cython extension types</a> which allow interfacing with C libraries while exposing drivers as encapsulated Python classes.</p>
+<p>Drivers can also be added to LiCoRICE directly by adding an extension type to the correct folder in the LiCoRICE source code and compiling from source. Sink drivers must be added to the <code class="docutils literal notranslate"><span class="pre">licorice/templates/sink_drivers/</span></code> folder and source drivers to <code class="docutils literal notranslate"><span class="pre">licorice/templates/source</span> <span class="pre">_drivers/</span></code>.</p>
+<section id="specification">
+<h2>Specification<a class="headerlink" href="#specification" title="Permalink to this heading"></a></h2>
+<p>A LiCoRICE custom driver has a few mandatory requirements.</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Drivers must constitute of a set of files in one folder with the driver’s name with the following structure:</p></li>
+</ul>
+<blockquote>
+<div><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">driver</span><span class="o">-</span><span class="n">name</span><span class="o">&gt;</span>
+<span class="o">|--</span> <span class="fm">__init__</span><span class="o">.</span><span class="n">pxd</span>
+<span class="o">|--</span> <span class="o">&lt;</span><span class="n">driver</span><span class="o">-</span><span class="n">name</span><span class="o">&gt;.</span><span class="n">pxd</span><span class="o">.</span><span class="n">j2</span>
+<span class="o">|--</span> <span class="o">&lt;</span><span class="n">driver</span><span class="o">-</span><span class="n">name</span><span class="o">&gt;.</span><span class="n">pyx</span><span class="o">.</span><span class="n">j2</span>
+</pre></div>
+</div>
+</div></blockquote>
+<ul class="simple">
+<li><p>Driver extension type classes must subclass the appropriate <code class="docutils literal notranslate"><span class="pre">source_driver.SourceDriver</span></code> or <code class="docutils literal notranslate"><span class="pre">sink_driver.SinkDriver</span></code> abstract class. These classes are implemented in LiCoRICE and can be imported as below if the <code class="docutils literal notranslate"><span class="pre">licorice</span></code> package is installed in your virtualenv:</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">source_drivers</span> <span class="n">cimport</span> <span class="n">source_driver</span>
+<span class="c1"># source_driver.SourceDriver</span>
+
+<span class="kn">from</span> <span class="nn">sink_drivers</span> <span class="n">cimport</span> <span class="n">source_driver</span>
+<span class="c1"># sink_driver.SinkDriver</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Driver classes must implement a <code class="docutils literal notranslate"><span class="pre">run</span></code> and <code class="docutils literal notranslate"><span class="pre">exit_handler</span></code> method which are the <code class="docutils literal notranslate"><span class="pre">NotImplemented</span></code> methods of the generic abstract <code class="docutils literal notranslate"><span class="pre">SourceDriver</span></code> and <code class="docutils literal notranslate"><span class="pre">SinkDriver</span></code> classes.</p></li>
+</ul>
+</div></blockquote>
+</section>
 <section id="example">
 <h2>Example<a class="headerlink" href="#example" title="Permalink to this heading"></a></h2>
-<p>The following is an implementation of a parallel port source driver which uses pyparallel to read in data each tick. It implements four driver code sections (<code class="docutils literal notranslate"><span class="pre">imports</span></code>, <code class="docutils literal notranslate"><span class="pre">variables</span></code>, <code class="docutils literal notranslate"><span class="pre">setup</span></code>, and <code class="docutils literal notranslate"><span class="pre">read</span></code>) and omits one (<code class="docutils literal notranslate"><span class="pre">exit_handler</span></code>) that is not used. The driver code sections are directly dropped into the source template using <a class="reference external" href="https://jinja.palletsprojects.com/en/3.1.x/">Jinja2 templating</a>. Note that templating can also be used in the driver itself. In this instance, the <code class="docutils literal notranslate"><span class="pre">async</span></code> flag is used to ensure that for async modules, the read call happens at most twice per tick (since the <code class="docutils literal notranslate"><span class="pre">sleep_duration</span></code> is half a tick-length). The exact same driver can then be used for a synchronous parallel port source since the sleep call will be skipped and reads will happen once per tick.</p>
-<div class="highlight-cython notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="c"># __DRIVER_CODE__ imports</span>
-<span class="linenos"> 2</span><span class="k">import</span> <span class="nn">parallel</span>
-<span class="linenos"> 3</span>
-<span class="linenos"> 4</span><span class="c"># __DRIVER_CODE__ variables</span>
-<span class="linenos"> 5</span>
-<span class="linenos"> 6</span><span class="k">cdef</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="nf">inVal</span>
+<p>The following is an implementation of a parallel port source driver which uses <code class="docutils literal notranslate"><span class="pre">pyparallel</span></code> to read in data each tick. The driver files use <a class="reference external" href="https://jinja.palletsprojects.com/en/3.1.x/">Jinja2 templating</a> in order to embed configuration values. Note that variables for the extension type class are defined in the <code class="docutils literal notranslate"><span class="pre">.pxd</span></code> file (like a C header file) and method implementations are defined in the <code class="docutils literal notranslate"><span class="pre">.pyx</span></code> file (like a C source file).</p>
+<p>An empty <code class="docutils literal notranslate"><span class="pre">__init__.pxd</span></code> file must be included in the driver folder so that the driver can be imported into python code as a package.</p>
+<div class="highlight-cython notranslate"><div class="highlight"><pre><span></span><span class="c"># __init__.pxd</span>
+
+<span class="c"># must have an empty __init__.pxd file</span>
+</pre></div>
+</div>
+<p>Then, the <code class="docutils literal notranslate"><span class="pre">.pxd.j2</span></code> templated header file defines any variables used the class (use <code class="docutils literal notranslate"><span class="pre">cdef</span> <span class="pre">object</span></code> to specify Python variables) as well as the method signature for the mandatory <code class="docutils literal notranslate"><span class="pre">run</span></code> and <code class="docutils literal notranslate"><span class="pre">exit_handler</span></code> methods. Other helper methods can be included here as well.</p>
+<div class="highlight-cython notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="c"># parport.pxd.j2</span>
+<span class="linenos"> 2</span>
+<span class="linenos"> 3</span><span class="k">from</span> <span class="nn">libc.stdint</span> <span class="k">cimport</span> <span class="n">uint8_t</span>
+<span class="linenos"> 4</span>
+<span class="linenos"> 5</span><span class="k">from</span> <span class="nn">runner_utils</span> <span class="k">cimport</span> <span class="n">times_t</span>
+<span class="linenos"> 6</span><span class="k">from</span> <span class="nn">source_drivers</span> <span class="k">cimport</span> <span class="n">source_driver</span>
 <span class="linenos"> 7</span>
+<span class="linenos"> 8</span><span class="k">cdef</span> <span class="k">class</span> <span class="nf">ParportSourceDriver</span><span class="p">(</span><span class="n">source_driver</span><span class="o">.</span><span class="n">SourceDriver</span><span class="p">):</span>
+<span class="linenos"> 9</span>    <span class="k">cdef</span> <span class="kt">object</span> <span class="nf">pport</span>
+<span class="linenos">10</span>    <span class="k">cdef</span> <span class="kt">float</span> <span class="nf">sleep_duration</span>
+<span class="linenos">11</span>
+<span class="linenos">12</span>    <span class="k">cdef</span> <span class="kt">size_t</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">times_t</span> <span class="o">*</span><span class="n">times</span><span class="p">,</span> <span class="n">void</span> <span class="o">*</span><span class="n">inBuf</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">packetSize</span><span class="p">,</span> <span class="nb">object</span> <span class="n">out_sigs</span><span class="p">)</span> <span class="k">except</span> <span class="o">*</span>
+<span class="linenos">13</span>    <span class="k">cdef</span> <span class="kt">void</span> <span class="nf">exit_handler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">int</span> <span class="n">exitStatus</span><span class="p">)</span> <span class="k">except</span> <span class="o">*</span>
+</pre></div>
+</div>
+<p>Finally, the <code class="docutils literal notranslate"><span class="pre">.pyx.j2</span></code> source file includes the implementation of the <code class="docutils literal notranslate"><span class="pre">run</span></code> and <code class="docutils literal notranslate"><span class="pre">exit_handler</span></code> methods, as well as a <code class="docutils literal notranslate"><span class="pre">__cinit__</span></code> method that sets up any resources needed during realtime execution.</p>
+<div class="highlight-cython notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="c"># parport.pyx.j2</span>
+<span class="linenos"> 2</span>
+<span class="linenos"> 3</span><span class="k">import</span> <span class="nn">parallel</span>
+<span class="linenos"> 4</span>
+<span class="linenos"> 5</span><span class="k">from</span> <span class="nn">libc.stdint</span> <span class="k">cimport</span> <span class="n">uint8_t</span>
+<span class="linenos"> 6</span>
+<span class="linenos"> 7</span><span class="k">from</span> <span class="nn">source_drivers</span> <span class="k">cimport</span> <span class="n">source_driver</span>
 <span class="linenos"> 8</span>
-<span class="linenos"> 9</span><span class="c"># __DRIVER_CODE__ setup</span>
-<span class="linenos">10</span>
-<span class="linenos">11</span><span class="n">pport</span> <span class="o">=</span> <span class="n">parallel</span><span class="o">.</span><span class="n">Parallel</span><span class="p">(</span><span class="n">port</span><span class="o">=</span><span class="p">{{</span><span class="n">in_signal</span><span class="p">[</span><span class="s">&#39;args&#39;</span><span class="p">][</span><span class="s">&#39;addr&#39;</span><span class="p">]}})</span>
-<span class="linenos">12</span><span class="n">pport</span><span class="o">.</span><span class="n">setDataDir</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span> <span class="c"># read from data pins, sets PPDATADIR</span>
-<span class="linenos">13</span><span class="n">sleep_duration</span> <span class="o">=</span> <span class="p">{{</span><span class="n">config</span><span class="p">[</span><span class="s">&quot;config&quot;</span><span class="p">][</span><span class="s">&quot;tick_len&quot;</span><span class="p">]}}</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.</span> <span class="o">*</span> <span class="mf">1e6</span><span class="p">)</span>
+<span class="linenos"> 9</span><span class="k">cdef</span> <span class="k">class</span> <span class="nf">ParportSourceDriver</span><span class="p">(</span><span class="n">source_driver</span><span class="o">.</span><span class="n">SourceDriver</span><span class="p">):</span>
+<span class="linenos">10</span>    <span class="k">def</span> <span class="nf">__cinit__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="linenos">11</span>        <span class="bp">self</span><span class="o">.</span><span class="n">pport</span> <span class="o">=</span> <span class="n">parallel</span><span class="o">.</span><span class="n">Parallel</span><span class="p">(</span><span class="n">port</span><span class="o">=</span><span class="p">{{</span><span class="n">in_signal</span><span class="p">[</span><span class="s">&#39;args&#39;</span><span class="p">][</span><span class="s">&#39;addr&#39;</span><span class="p">]}})</span>
+<span class="linenos">12</span>        <span class="bp">self</span><span class="o">.</span><span class="n">pport</span><span class="o">.</span><span class="n">setDataDir</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span> <span class="c"># read from data pins, sets PPDATADIR</span>
+<span class="linenos">13</span>        <span class="bp">self</span><span class="o">.</span><span class="n">sleep_duration</span> <span class="o">=</span> <span class="p">{{</span><span class="n">config</span><span class="p">[</span><span class="s">&quot;config&quot;</span><span class="p">][</span><span class="s">&quot;tick_len&quot;</span><span class="p">]}}</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.</span> <span class="o">*</span> <span class="mf">1e6</span><span class="p">)</span>
 <span class="linenos">14</span>
-<span class="linenos">15</span><span class="c"># __DRIVER_CODE__ read</span>
-<span class="linenos">16</span>
-<span class="linenos">17</span>  <span class="n">inVal</span> <span class="o">=</span> <span class="o">&lt;</span><span class="nb">unsigned</span> <span class="n">char</span><span class="o">&gt;</span><span class="n">pport</span><span class="o">.</span><span class="n">getData</span><span class="p">()</span>
-<span class="linenos">18</span>  <span class="n">inBuf</span><span class="p">[</span><span class="mf">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">inVal</span>
+<span class="linenos">15</span>    <span class="k">cdef</span> <span class="kt">size_t</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">times_t</span> <span class="o">*</span><span class="n">times</span><span class="p">,</span> <span class="n">void</span> <span class="o">*</span><span class="n">inBuf</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">packetSize</span><span class="p">,</span> <span class="nb">object</span> <span class="n">out_sigs</span><span class="p">)</span> <span class="k">except</span> <span class="o">*</span><span class="p">:</span>
+<span class="linenos">16</span>        <span class="p">(</span><span class="o">&lt;</span><span class="nb">unsigned</span> <span class="n">char</span> <span class="o">*&gt;</span><span class="n">inBuf</span><span class="p">)[</span><span class="mf">0</span><span class="p">]</span> <span class="o">=</span> <span class="o">&lt;</span><span class="nb">unsigned</span> <span class="n">char</span><span class="o">&gt;</span><span class="bp">self</span><span class="o">.</span><span class="n">pport</span><span class="o">.</span><span class="n">getData</span><span class="p">()</span>
+<span class="linenos">17</span>
+<span class="linenos">18</span><span class="p">{</span><span class="o">%-</span> <span class="k">if</span> <span class="k">async</span> <span class="o">%</span><span class="p">}</span>
 <span class="linenos">19</span>
-<span class="linenos">20</span><span class="p">{</span><span class="o">%-</span> <span class="k">if</span> <span class="k">async</span> <span class="o">%</span><span class="p">}</span>
-<span class="linenos">21</span>
-<span class="linenos">22</span>  <span class="n">sleep</span><span class="p">(</span><span class="n">sleep_duration</span><span class="p">)</span>
-<span class="linenos">23</span><span class="p">{</span><span class="o">%-</span> <span class="n">endif</span> <span class="o">%</span><span class="p">}</span>
+<span class="linenos">20</span>        <span class="n">sleep</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sleep_duration</span><span class="p">)</span>
+<span class="linenos">21</span><span class="p">{</span><span class="o">%-</span> <span class="n">endif</span> <span class="o">%</span><span class="p">}</span>
+<span class="linenos">22</span>
+<span class="linenos">23</span>        <span class="k">return</span> <span class="mf">1</span>
+<span class="linenos">24</span>
+<span class="linenos">25</span>    <span class="k">cdef</span> <span class="kt">void</span> <span class="nf">exit_handler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">int</span> <span class="n">exitStatus</span><span class="p">)</span> <span class="k">except</span> <span class="o">*</span><span class="p">:</span>
+<span class="linenos">26</span>        <span class="k">pass</span>
 </pre></div>
 </div>
 </section>
