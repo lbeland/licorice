@@ -491,7 +491,7 @@ def __run_model(**kwargs):
     if kwargs["rt"]:
         # TODO rt models must set up cpuset themselves.
         # integrate this into LiCoRICE
-        run_cmd = f"cset shield --exec nice -- -n -20 {run_cmd}"
+        run_cmd = f"cset proc -s lico -e nice -- -n -20 {run_cmd}"
 
     for line in __execute_iterable_output(
         shlex.split(run_cmd),
