@@ -257,7 +257,7 @@ def test_multi_signal(enable, capfd):
                 for val in value
             ]
         )
-    values = np.array(new_values)
+    values = np.array(new_values, dtype=object)
 
     seed = []
     for name in col_names:
@@ -266,7 +266,7 @@ def test_multi_signal(enable, capfd):
             seed.append(np.array(np.ones(dict_vals[2][1], dtype=dtype)))
         else:
             seed.append(dtype(1))
-    seed = np.array(seed)
+    seed = np.array(seed, dtype=object)
     expected_list = get_expected_list(NUM_TICKS, None, seed=seed)
 
     if not enable:
