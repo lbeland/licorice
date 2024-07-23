@@ -375,7 +375,7 @@ while(True):
   {{sig}}AsyncBufVars = pAsyncBuf + asyncBufIdx + BUF_VARS_LEN * {{loop.index0}}
 {%- endfor %}
   sleep_count = 0
-  while (pAsyncBuf[asyncBufIdx+ASYNC_BUF_STEP-1] == 1):
+  while (pAsyncBuf[asyncBufIdx + ASYNC_BUF_STEP - 1] == 1):
     if (sleep_count > 20 or shouldExit):
       handle_exit(0)
     # TODO could use clock_nanosleep
@@ -387,8 +387,14 @@ while(True):
   # {{sig}}BufVars[6] = {{sig}}BufVars[9] - {{sig}}BufVars[8]
   {{sig}}BufVarsNext += {{sig}}BufVars[5]
   {{sig}}BufVarsNdNext += {{sig}}BufVars[13]
-  # {{sig}}BufVars[3] += {{sig}}BufVars[5]
-  # {{sig}}BufVars[11] += 1
+
+  # TODO allow [7] not multiple of [5]
+  # if (
+  #   ({{sig}}BufVars[7] <= ({{sig}}BufVarsNext + {{sig}}BufVars[6])) or
+  #   ({{sig}}BufVarsNext > {{sig}}BufVars[4])
+  # ):
+  #   {{sig}}BufVars[4] = {{sig}}BufVarsNext
+  #   {{sig}}BufVars[12] = {{sig}}BufVarsNdNext
 
   # wrap buffer for async readers
   if {{sig}}BufVars[7] <= {{sig}}BufVarsNext: # assume [7] multiple of [5]
@@ -397,7 +403,7 @@ while(True):
     memcpy(
       {{sig}}StrtPtr,
       {{sig}}StrtPtr + {{sig}}BufVars[7] - {{sig}}BufVarsNext,
-      {{sig}}BufVarsNext
+      {{sig}}BufVarsNext * {{args["bytes"]}}
     )
 
   {{sig}}AsyncBufVars[2] = {{sig}}BufVarsNext
