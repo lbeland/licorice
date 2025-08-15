@@ -467,9 +467,16 @@ def parse(paths, model_config, **kwargs):
             signal_args["history"] = signal_args["max_packets_per_tick"]
             warnings.warn("history must be at least max_packets_per_tick.")
 
+        history_pad = 0
+        # TODO async module definition
+        # if signal_args.get("async"):
+        #     history_pad = signal_args['max_packets_per_tick']
+
         signal_args["sig_shape"] = (
-            f"({signal_args['history']}," f"{signal_args['sig_shape']}"
+            f"({signal_args['history']+history_pad},"
+            f"{signal_args['sig_shape']}"
         )
+
         signal_args["buf_tot_numel"] = np.prod(
             np.array(literal_eval(str(signal_args["sig_shape"])))
         )
@@ -1259,7 +1266,6 @@ def parse(paths, model_config, **kwargs):
                 "out_dtype": out_dtype,
                 "buf_vars_len": BUF_VARS_LEN,
                 "source_outputs": list(source_outputs),
-                "history_pad_length": HISTORY_DEFAULT,
                 "platform_system": platform_system,
                 # TODO add clear documentation on how to set this and check max
                 "async_buf_len": None
@@ -1517,7 +1523,6 @@ def parse(paths, model_config, **kwargs):
                 "top_level": all(
                     [k in list(source_outputs) for k in list(in_signals)]
                 ),
-                "history_pad_length": HISTORY_DEFAULT,
                 "platform_system": platform_system,
             }
 
@@ -1748,7 +1753,6 @@ def parse(paths, model_config, **kwargs):
         num_internal_sigs=len(internal_signals),
         num_source_sigs=len(list(source_outputs)),
         buf_vars_len=BUF_VARS_LEN,
-        history_pad_length=HISTORY_DEFAULT,
     )
 
 

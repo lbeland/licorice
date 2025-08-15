@@ -31,15 +31,16 @@ cdef class SignalGeneratorSourceDriver(source_driver.SourceDriver):
             self.sig_idxs.append(0)
 
     cdef size_t run(self, times_t *times, void *inBuf, size_t packetSize, object out_sigs) except *:
-
+        cdef size_t step_sum = 0
         for i, args in enumerate(self.signal_args):
             # TODO set out_sigs directly
             # sigs[self.out_sig_names[i]] = self.signals[i][self.sig_idxs[i]:self.sig_idxs[i]+args["step"]]
             memcpy(
               inBuf,
               <void *><long>self.signals[i][self.sig_idxs[i]:self.sig_idxs[i]+args["step"]].__array_interface__["data"][0],
-              args["step"] * 8
+              args["step"] * 8 # sizeof(args["ctype"])  # TODO get word size from args["dtype"]
             )
+            step_sum += args["step"]
             self.sig_idxs[i] += args["step"]
             if self.sig_idxs[i] >= args["fs"]:
                 self.sig_idxs[i] = 0
@@ -48,7 +49,7 @@ cdef class SignalGeneratorSourceDriver(source_driver.SourceDriver):
         time.sleep(self.sleep_duration)
         {% endif %}
 
-        return 0  # Downstream modules can't use inBufLen
+        return step_sum
 
 
     cdef void exit_handler(self, int exitStatus) except *:

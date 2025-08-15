@@ -259,12 +259,19 @@ memset({{sig}}BufVars, 0, 16)
 {{sig}}BufVars[7] = {{args["buf_tot_numel"]}}
 {{sig}}BufVars[13] = 1
 {{sig}}BufVars[15] = {{args["history"]}}
+
   {%- if async %}
 {{sig}}BufVars[2] = {{sig}}BufVars[6]
 {{sig}}BufVars[10] = {{args["max_packets_per_tick"]}}
+# TODO move this logic to template_funcs
+# {{sig}}BufVars[7] = {{args["buf_tot_numel"]}} + {{sig}}BufVars[6]
+# {{sig}}BufVars[15] = {{args["history"]}} + {{args["max_packets_per_tick"]}}
   {%- else %}
 {{sig}}BufVars[2] = 0
 {{sig}}BufVars[10] = 0 # {{sig}}Latency
+# TODO move this logic to template_funcs
+# {{sig}}BufVars[7] = {{args["buf_tot_numel"]}}
+# {{sig}}BufVars[15] = {{args["history"]}}
   {%- endif %}
 {%- endfor %}
 

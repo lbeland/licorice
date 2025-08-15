@@ -92,6 +92,50 @@ def test_async_reader(capfd):
         assert vals[i] - vals[i - 1] == 1
 
 
+def test_async_reader_intermittent(capfd):
+    """Tests that async readers only registers the amount of data specified by
+    the driver run method.
+    """
+
+    async_reader_model["signals"]["uint64_signal"]["history"] = 4000
+    async_reader_model["modules"]["shared_array_in"]["in"]["args"].update({
+        "type": "shared_array_intermittent",
+        "data_freq": 20,
+    })
+
+    sa_sig_name = async_reader_model["modules"]["shared_array_in"]["in"][
+        "args"
+    ]["sig_name"]
+    sa_sig = create_shared_array(f"shm://{sa_sig_name}", 100, np.uint64)
+    for i in range(sa_sig.size):
+        sa_sig[i] = i + 1
+
+    # run LiCoRICE with sink parser
+    try:
+        licorice.go(
+            async_reader_model,
+            confirm=True,
+            working_path=f"{pytest.test_dir}/module_code",
+            template_path=f"{pytest.test_dir}/templates",
+        )
+    except subprocess.CalledProcessError:
+        pass
+
+    sa.delete(sa_sig_name)
+
+    captured_out, captured_err = validate_model_output(capfd, NUM_TICKS)
+
+    # check output is sequential
+    vals = [
+        int(val)
+        for val in re.findall(
+            r"shared_array_print_output: (\d+)", captured_out
+        )
+    ]
+    for i in range(1, len(vals)):
+        assert vals[i] - vals[i - 1] == 1
+
+
 async_writer_model = {
     "config": {
         "tick_len": 10000,

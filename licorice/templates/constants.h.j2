@@ -136,8 +136,10 @@
 // Macro to round X up to nearest multiple of Y
 #define ROUND_UP(X, Y) ((((X) + (Y) - 1) / (Y)) * (Y))
 
+// TODO reimplement or remove. maybe better to have DEFAULT_HISTORY as a global
+// config variable
 // Number of extra ticks-worth of padding required in circular buffers to maintain desired amount of history
-#define HISTORY_PAD_LENGTH {history_pad_length}
+#define HISTORY_PAD_LENGTH 0
 
 // Number of elements in each bufVars array
 // Set in template_funcs.py

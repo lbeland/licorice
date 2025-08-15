@@ -1,5 +1,6 @@
 from libc.errno cimport EAGAIN, EINTR
 from libc.stdio cimport printf, fflush, stdout
+from libc.stdint cimport int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t
 
 cdef class UdpSourceDriver(source_driver.SourceDriver):
     def __cinit__(self):
@@ -62,13 +63,15 @@ cdef class UdpSourceDriver(source_driver.SourceDriver):
             if (errno != EINTR):
                 die("NETWORK ERROR: recvfrom()\n")
             else:
-                die("Read error.\n")
+                # read interrupted; continue
+                inBufLen = 0
 
         # {%- if async %}
         #   sleep(self.sleep_duration)
         # {%- endif %}
 
-        return inBufLen
+        # TODO well define if drivers should work in bytes or samples
+        return inBufLen // sizeof({{in_signal['schema']['data']['ctype']}})
 
 
     cdef void exit_handler(self, int exitStatus) except *:

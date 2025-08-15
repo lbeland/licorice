@@ -217,6 +217,7 @@ data_writer_model_stress = copy.deepcopy(data_writer_model)
 data_writer_model_stress["signals"]["udp_data"] = {
     "shape": UDP_PAYLOAD_LENGTH,
     "dtype": "uint8",
+    "history": 50000,  # TODO test with smaller buffers
 }
 data_writer_model_stress["modules"]["udp_source"]["in"]["schema"]["data"] = {
     "size": UDP_PAYLOAD_LENGTH,
@@ -277,6 +278,7 @@ def test_udp_roundtrip(model, generator, validator, should_run_index, capfd):
     # TODO: debug seg fault
     # validate_model_output(capfd, model["config"]["num_ticks"])
     output, outerr = capfd.readouterr()
+    print(output)
     pattern = r"Timer thread started\.(.*?)^Killing module udp_"
     result = re.search(pattern, output, re.DOTALL | re.MULTILINE)
     extracted_content = result.group(1).strip()
