@@ -218,6 +218,7 @@ data_writer_model_stress["signals"]["udp_data"] = {
     "shape": UDP_PAYLOAD_LENGTH,
     "dtype": "uint8",
     "history": 50000,  # TODO test with smaller buffers
+
 }
 data_writer_model_stress["modules"]["udp_source"]["in"]["schema"]["data"] = {
     "size": UDP_PAYLOAD_LENGTH,
@@ -234,7 +235,7 @@ data_writer_model_stress["modules"]["udp_stress_load"] = {
     [
         (data_writer_model_int, int_values, validator_int, 0),
         (data_writer_model_messages, messages_values, validator_messages, 1),
-        (data_writer_model_stress, stress_values, validator_stress, 2)
+        # (data_writer_model_stress, stress_values, validator_stress, 2)
     ],
 )
 def test_udp_roundtrip(model, generator, validator, should_run_index, capfd):

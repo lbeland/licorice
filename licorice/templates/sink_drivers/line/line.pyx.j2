@@ -1,4 +1,4 @@
-from libc.stdio cimport printf
+from libc.stdio cimport printf, perror, fflush, stdout
 from libc.stdlib cimport malloc, free, EXIT_SUCCESS, EXIT_FAILURE
 from libc.stdint cimport int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t
 from posix.signal cimport sigset_t, sigfillset
@@ -59,9 +59,10 @@ cdef class LineSinkDriver(sink_driver.SinkDriver):
             self.pLineOutBufWrite += outBufLen
 
         # TODO debug latency
-        # print(linePeriodsWritten, flush=True)
+        # print(self.linePeriodsWritten, outBufLen, flush=True)
         for i in range(self.linePeriodsWritten):
             if (pcm_write_buffer(self.play_handle, <uint8_t *>self.pLineOutBufRead, self.linePeriodSizeFrames) < 0):
+                perror("Error")
                 die("pcm_write_buffer failed.\n")
 
             # j = 0

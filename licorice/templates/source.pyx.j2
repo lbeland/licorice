@@ -412,6 +412,12 @@ while(True):
   {%- endfor %}
 
   {%- for sig,args in (out_signals.items()) %}
+  if inBufLen == 0:
+    {{sig}}BufVars[5] = 0
+    {{sig}}BufVars[13] = 0
+  else:
+    {{sig}}BufVars[5] = {{args["packet_size"]}}
+    {{sig}}BufVars[13] = 1
   {{sig}}BufVars[2] += {{sig}}BufVars[5]
   {{sig}}BufVars[10] += {{sig}}BufVars[13]
   if ({{sig}}BufVars[7] <= {{sig}}BufVars[2] + {{sig}}BufVars[6]) or ({{sig}}BufVars[2] > {{sig}}BufVars[4]):

@@ -58,7 +58,7 @@ cdef extern from "../utilityFunctions.h":
 DEF SIG_BLOCK = 1
 DEF LINE_BUFFER_PERIODS = 100
 
-cdef class LineSourceDriver(source_driverSourceDriver):
+cdef class LineSourceDriver(source_driver.SourceDriver):
     def __cinit__(self):
         # initiliaze line in
         self.cap_values.device = '{{in_signal["args"]["pcm"]["device"]}}'

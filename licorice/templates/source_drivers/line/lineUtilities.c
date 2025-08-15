@@ -238,28 +238,30 @@ static int xrun_recovery(snd_pcm_t *handle, int err) {
 }
 
 int pcm_write_buffer(snd_pcm_t *handle, uint8_t *ptr, int cptr) {
-  int err;
+  int ret, frames;
 
   while (cptr > 0) {
-    err = snd_pcm_writei(handle, ptr, cptr);
-    if (err == -EAGAIN)
+    if ((ret = snd_pcm_writei(handle, ptr, cptr)) == -EAGAIN)
       continue;
 
-    if (err < 0) {
-      if (err == -EPIPE)
+    if (ret < 0) {
+      if (ret == -EPIPE)
         fprintf(stderr, "Underrun: ");
-      fprintf(stderr, "Write error: %d,%s\n", err, snd_strerror(err));
-      if (xrun_recovery(handle, err) < 0) {
-        fprintf(stderr, "xrun_recovery failed: %d,%s\n", err, snd_strerror(err));
-        return -1;
+      fprintf(stderr, "Write error: %d,%s\n", ret, snd_strerror(ret));
+      if (xrun_recovery(handle, ret) < 0) {
+        fprintf(stderr, "xrun_recovery failed: %d,%s\n", ret, snd_strerror(ret));
+        return ret;
       }
       break;  /* skip one period */
     }
 
-    ptr += snd_pcm_frames_to_bytes(handle, err);
-    cptr -= err;
+    if ((frames = snd_pcm_frames_to_bytes(handle, ret)) < 0) {
+      return frames;
+    }
+    ptr += frames;
+    cptr -= ret;
   }
-  return ptr;
+  return ret;
 }
 
 snd_pcm_sframes_t pcm_get_period_size_bytes(pcm_values_t *values) {
@@ -268,24 +270,26 @@ snd_pcm_sframes_t pcm_get_period_size_bytes(pcm_values_t *values) {
 
 
 int pcm_read_buffer(snd_pcm_t *handle, uint8_t *ptr, int cptr) {
-  int err;
+  int ret, frames;
 
   while (cptr > 0) {
-    err = snd_pcm_readi(handle, ptr, cptr);
-    if (err == -EAGAIN)
+    if ((ret = snd_pcm_readi(handle, ptr, cptr)) == -EAGAIN)
       continue;
 
-    if (err < 0) {
-      fprintf(stderr, "Read error: %d,%s\n", err, snd_strerror(err));
-      if (xrun_recovery(handle, err) < 0) {
-        fprintf(stderr, "xrun_recovery failed: %d,%s\n", err, snd_strerror(err));
+    if (ret < 0) {
+      fprintf(stderr, "Read error: %d,%s\n", ret, snd_strerror(ret));
+      if (xrun_recovery(handle, ret) < 0) {
+        fprintf(stderr, "xrun_recovery failed: %d,%s\n", ret, snd_strerror(ret));
         return -1;
       }
       break;  /* skip one period */
     }
 
-    ptr += snd_pcm_frames_to_bytes(handle, err);
-    cptr -= err;
+    if ((frames = snd_pcm_frames_to_bytes(handle, ret)) < 0) {
+      return frames;
+    }
+    ptr += frames;
+    cptr -= ret;
   }
-  return ptr;
+  return ret;
 }

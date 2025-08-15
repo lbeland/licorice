@@ -1,18 +1,18 @@
 # Read audio over line in, manipulate it, and output over line out
 
 config:
-  tick_len: 100000
+  tick_len: 10000
   # num_ticks: 2
   source_init_ticks: 10
 
 signals:
   audio_signal_source:
-    shape: (4410, )
+    shape: (441, )
     dtype: int16
     history: 10000
   
   audio_signal_sink:
-    shape: (4410, )
+    shape: (441, )
     dtype: int16
     history: 1000
 
@@ -32,13 +32,13 @@ modules:
           channels: 1
           rate: 44100
           buffer_time: 0  # ring buffer length in us
-          period_time: 100000  # period time in us
+          period_time: 10000  # period time in us
           periods: 2
       schema:
         max_packets_per_tick: 2
         data:
           dtype: int16
-          size: 4410
+          size: 441
 
     out:
       - audio_signal_source
@@ -68,18 +68,22 @@ modules:
           channels: 1
           rate: 44100
           buffer_time: 0 # ring buffer length in us
-          period_time: 100000  # period time in us
+          period_time: 10000  # period time in us
           periods: 2
       schema:
         data:
           dtype: int16
-          size: 4410
+          size: 441
 
-  # audio_vis:
-  #   language: python
-  #   in:
-  #     - audio_signal_source
-  #   out:
-  #     name: viz
-  #     args:
-  #       type: vis_pygame
+  audio_vis:
+    language: python
+    constructor: true
+    parser: true
+    destructor: true
+    in:
+      - audio_signal_source
+    out:
+      name: viz
+      async: True
+      args:
+        type: vis_pygame

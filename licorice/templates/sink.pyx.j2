@@ -424,8 +424,8 @@ while(True):
   pAsyncBufInfo[pAsyncFlushIndexEnd[0]].{{sig}}StrtOffsetSamples = {{sig}}BufVars[0]
   pAsyncBufInfo[pAsyncFlushIndexEnd[0]].{{sig}}StrtOffset = {{sig}}BufVars[8]
   pAsyncBufInfo[pAsyncFlushIndexEnd[0]].{{sig}}EndOffset ={{sig}}BufVars[9]
-  # TODO make sure this is packets everywhere
-  pAsyncBufInfo[pAsyncFlushIndexEnd[0]].{{sig}}Len = {{sig}}BufVars[9] - {{sig}}BufVars[8]
+  # TODO make sure this is samples everywhere
+  pAsyncBufInfo[pAsyncFlushIndexEnd[0]].{{sig}}Len = {{sig}}BufVars[1] - {{sig}}BufVars[0]
   {% endfor %}
   pAsyncFlushIndexEnd[0] += 1
   if pAsyncFlushIndexEnd[0] >= ASYNC_BUF_LEN:
