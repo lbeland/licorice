@@ -1625,7 +1625,10 @@ def parse(paths, model_config, **kwargs):
 
     # parse Makefile
     py_paths = get_paths()
-    py_conf_str = f"{get_config_var('BINDIR')}/python3-config"
+    py_conf_str = (
+        f"{get_config_var('BINDIR')}/"
+        f"python{sys.version_info.major}.{sys.version_info.minor}-config"
+    )
     py_link_flags = (
         subprocess.check_output([py_conf_str, "--embed", "--ldflags"])
         .decode("utf-8")
